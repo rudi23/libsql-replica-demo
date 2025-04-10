@@ -1,0 +1,22 @@
+services:
+  libsql:
+    image: ghcr.io/tursodatabase/libsql-server:361d082
+    container_name: libsql-replica2
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./data:/var/lib/sqld
+    environment:
+      - SQLD_HTTP_LISTEN_ADDR=0.0.0.0:8080
+      - SQLD_DB_PATH=/var/lib/sqld/books_replica.db
+      - SQLD_HTTP_AUTH=basic:dXNlcjpwYXNzd29yZA==
+      - SQLD_PRIMARY_URL=http://user:password@libsql-server:8080
+      - SQLD_PRIMARY_GRPC_URL=http://libsql-server:5001
+    command: sqld
+    restart: unless-stopped
+    networks:
+      - libsql-network
+
+networks:
+  libsql-network:
+    external: true

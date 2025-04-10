@@ -63,7 +63,16 @@ docker-compose up
 
 This starts a LibSQL replica server on port 8081 that connects to the primary server.
 
-### 4. Initialize the Database
+### 4. Start the Replica Server 2
+
+```bash
+cd libsql-replica2
+docker-compose up
+```
+
+This starts a LibSQL replica server on port 8082 that connects to the primary server.
+
+### 5. Initialize the Database
 
 ```bash
 cd libsql-server
@@ -72,7 +81,7 @@ cd libsql-server
 
 This script creates a `books` table and populates it with sample data.
 
-## Interacting with the Servers
+## Interacting with the Servers via API
 
 ### Query the Primary Server
 
@@ -93,6 +102,25 @@ curl -X POST http://localhost:8081/v1/execute \
 ```
 
 > **Authentication**: Both servers use basic authentication with username `user` and password `password`
+
+### Interact with the Express Server
+
+```bash
+cd express-server
+npm start
+```
+
+This starts the Express server on port 3800.
+
+Available routes:
+
+- http://localhost:3800 - this will return a list of available routes.
+- http://localhost:3800/server - this will return the list of books from the primary server.
+- http://localhost:3800/server/add - this will add a new book to the primary server.
+- http://localhost:3800/replica - this will return the list of books from the replica server.
+- http://localhost:3800/replica/add - this will add a new book to the replica server.
+- http://localhost:3800/replica2 - this will return the list of books from the replica server 2.
+- http://localhost:3800/replica2/add - this will add a new book to the replica server 2.
 
 ### Access MinIO Console
 
