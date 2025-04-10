@@ -1,0 +1,77 @@
+services:
+  libsql:
+    image: ghcr.io/tursodatabase/libsql-server:361d082
+    container_name: libsql-server
+    ports:
+      - "8080:8080"
+      - "5001:5001"
+    volumes:
+      - ./data:/var/lib/sqld
+    environment:
+      - SQLD_HTTP_LISTEN_ADDR=0.0.0.0:8080
+      - SQLD_GRPC_LISTEN_ADDR=0.0.0.0:5001
+      - SQLD_DB_PATH=/var/lib/sqld/books.db
+      # dXNlcjpwYXNzd29yZA== -> user:password
+      - SQLD_HTTP_AUTH=basic:dXNlcjpwYXNzd29yZA==
+
+      - LIBSQL_BOTTOMLESS_ENDPOINT=http://minio:9000
+      - LIBSQL_BOTTOMLESS_BUCKET=libsql-backups
+      - LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID=minioadmin
+      - LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY=minioadmin
+      - LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION=us-east-1
+      # - RUST_LOG=info,bottomless=trace
+    command: sqld --enable-bottomless-replication
+    depends_on:
+      - minio
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 5s
+    restart: unless-stopped
+    networks:
+      - libsql-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"  # MinIO API
+      - "9001:9001"  # MinIO Console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    restart: unless-stopped
+    networks:
+      - libsql-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  create-bucket:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - libsql-network
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/libsql-backups --ignore-existing;
+      exit 0;
+      "
+
+networks:
+  libsql-network:
+    external: true
+
+volumes:
+  minio-data:
