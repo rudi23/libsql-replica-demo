@@ -20,11 +20,18 @@ This project consists of three main components:
 - curl (for API requests)
 - Bash shell (for initialization script)
 
+## Warning
+
+Looks like `sqld` software is in BETA version - there are many ongoing changes in documentation, commands and options.
+
+This demo was done with version `361d082` of the `libsql-server` image.
+
 ## Documentation Resources
 
 - [LibSQL Documentation](https://docs.turso.tech/libsql)
 - [LibSQL Server Mode](https://github.com/tursodatabase/libsql/tree/main/libsql-server)
 - [Bottomless Replication](https://github.com/tursodatabase/libsql/tree/main/libsql-server#integration-with-s3-bottomless-replication)
+- [Bottomless CLI](https://github.com/tursodatabase/libsql/tree/main/bottomless)
 - [MinIO Documentation](https://min.io/)
 
 ## Setup and Running
