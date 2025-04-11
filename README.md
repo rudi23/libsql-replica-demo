@@ -11,14 +11,14 @@ A demonstration project showing how to set up and use:
 This project consists of three main components:
 
 1. **Primary LibSQL Server** - Handles write operations and replicates data to both the replica and MinIO
-2. **LibSQL Replica** - Read-only server that stays synchronized with the primary server
-3. **MinIO Server** - S3-compatible storage for bottomless replication (database backups)
+2. **MinIO Server** - S3-compatible storage for bottomless replication (database backups)
 
 ## Prerequisites
 
 - Docker and Docker Compose
 - curl (for API requests)
 - Bash shell (for initialization script)
+- Node.js and npm (for Express server)
 
 ## Warning
 
@@ -30,9 +30,24 @@ This demo was done with version `361d082` of the `libsql-server` image.
 
 - [LibSQL Documentation](https://docs.turso.tech/libsql)
 - [LibSQL Server Mode](https://github.com/tursodatabase/libsql/tree/main/libsql-server)
+- [LibSQL Client for JavaScript](https://github.com/tursodatabase/libsql-js)
 - [Bottomless Replication](https://github.com/tursodatabase/libsql/tree/main/libsql-server#integration-with-s3-bottomless-replication)
 - [Bottomless CLI](https://github.com/tursodatabase/libsql/tree/main/bottomless)
 - [MinIO Documentation](https://min.io/)
+
+## Project Structure
+
+```filetree
+.
+├── express-server/          # Express.js based API server
+│   ├── index.js             # Server implementation
+│   ├── package.json         # Node.js dependencies
+├── libsql-server/           # Primary LibSQL server configuration
+│   ├── data/                # Database files location
+│   ├── docker-compose.yml   # Docker configuration for primary server and MinIO
+│   ├── init-db.sh           # Database initialization script
+└── README.md                # This file
+```
 
 ## Setup and Running
 
@@ -54,25 +69,7 @@ This starts:
 - The primary LibSQL server on port 8080
 - A MinIO server on ports 9000 (API) and 9001 (Console)
 
-### 3. Start the Replica Server
-
-```bash
-cd libsql-replica
-docker-compose up
-```
-
-This starts a LibSQL replica server on port 8081 that connects to the primary server.
-
-### 4. Start the Replica Server 2
-
-```bash
-cd libsql-replica2
-docker-compose up
-```
-
-This starts a LibSQL replica server on port 8082 that connects to the primary server.
-
-### 5. Initialize the Database
+### 3. Initialize the Database
 
 ```bash
 cd libsql-server
@@ -80,28 +77,6 @@ cd libsql-server
 ```
 
 This script creates a `books` table and populates it with sample data.
-
-## Interacting with the Servers via API
-
-### Query the Primary Server
-
-```bash
-curl -X POST http://localhost:8080/v1/execute \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Basic dXNlcjpwYXNzd29yZA==" \
-  -d '{"stmt": ["SELECT COUNT(1) FROM books"]}'
-```
-
-### Query the Replica Server
-
-```bash
-curl -X POST http://localhost:8081/v1/execute \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Basic dXNlcjpwYXNzd29yZA==" \
-  -d '{"stmt": ["SELECT COUNT(1) FROM books"]}'
-```
-
-> **Authentication**: Both servers use basic authentication with username `user` and password `password`
 
 ### Interact with the Express Server
 
@@ -115,12 +90,12 @@ This starts the Express server on port 3800.
 Available routes:
 
 - http://localhost:3800 - this will return a list of available routes.
-- http://localhost:3800/server - this will return the list of books from the primary server.
-- http://localhost:3800/server/add - this will add a new book to the primary server.
-- http://localhost:3800/replica - this will return the list of books from the replica server.
-- http://localhost:3800/replica/add - this will add a new book to the replica server.
-- http://localhost:3800/replica2 - this will return the list of books from the replica server 2.
-- http://localhost:3800/replica2/add - this will add a new book to the replica server 2.
+- http://localhost:3800/server - this will return the list of books from the primary server db.
+- http://localhost:3800/server/add - this will add a new book to the primary server db.
+- http://localhost:3800/replica - this will return the list of books from the replica db.
+- http://localhost:3800/replica/add - this will add a new book to the replica db.
+- http://localhost:3800/replica2 - this will return the list of books from the replica db 2.
+- http://localhost:3800/replica2/add - this will add a new book to the replica db 2.
 
 ### Access MinIO Console
 
@@ -134,16 +109,11 @@ The `libsql-backups` bucket contains the database backup files.
 ## Troubleshooting
 
 - **Connection Issues**: Ensure all containers are running with `docker ps`
-- **Replication Lag**: If replica data is not updating, check logs with `docker logs libsql-replica`
 - **MinIO Issues**: Verify bucket creation with `docker logs create-bucket`
 
 ## Shutting Down
 
 ```bash
-# Stop the replica
-cd libsql-replica
-docker-compose down -v
-
 # Stop the primary server and MinIO
 cd libsql-server
 docker-compose down -v
